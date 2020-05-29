@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
     private MaterialCardView fileMetatDataLabel;
     private TextView  fileNameLabel, fileSizeLabel, fileDateLabel;
     private static final int PICKFILE_REQUEST_CODE = 1;
-    private static final float  MEGABYTE = 1024L * 1024L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,15 +136,11 @@ public class MainActivity extends AppCompatActivity {
                         if (upload.uploadSuccessful()){
                             final FileMetadata fileMetadata = upload.getMetadata();
 
-                            //convert file size from kb to mb with two decimal places
-                            float sizeMb = fileMetadata.getSize()/MEGABYTE;
-                            String fileSize =String.format(Locale.US, "%.2f", sizeMb) + " Mb";
-
                             String modified = "Modified on " +DateFormat.getDateTimeInstance().format(fileMetadata.getClientModified());
 
                             fileNameLabel.setText(fileMetadata.getName());
                             fileDateLabel.setText(modified);
-                            fileSizeLabel.setText(fileSize);
+                            fileSizeLabel.setText(upload.getFileSize());
 
                             fileMetatDataLabel.setOnClickListener(new View.OnClickListener() {
                                 @Override

@@ -7,6 +7,7 @@ public class FileUploadResult {
     private FileMetadata fileUpload;
     private Exception error;
     private boolean uploadSuccess;
+    private String fileSizeMb;
 
     public FileUploadResult(){}
 
@@ -30,5 +31,13 @@ public class FileUploadResult {
 
     public boolean uploadSuccessful(){
         return uploadSuccess;
+    }
+
+    public String getFileSize() {
+        return fileSizeMb;
+    }
+
+    public void setFileSize(String fileSizeMb) {
+        this.fileSizeMb = fileSizeMb;
     }
 }

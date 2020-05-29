@@ -14,6 +14,8 @@ import com.sample.photoupload.data.dropbox.DropboxClientFactory;
 import com.sample.photoupload.data.UploadFileTask;
 import com.sample.photoupload.data.FileUploadResult;
 
+import java.util.Locale;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -23,6 +25,8 @@ public class PhotoUploadViewModel extends AndroidViewModel {
 
     private Context context;
     private boolean showLoginMessage = false;
+    private static final float  MEGABYTE = 1024L * 1024L;
+    private FileUploadResult lastFileUploaded;
 
     public PhotoUploadViewModel(@NonNull Application application){
         super(application);
@@ -62,7 +66,11 @@ public class PhotoUploadViewModel extends AndroidViewModel {
         new UploadFileTask(context, DropboxClientFactory.getClient(), new UploadFileTask.Callback() {
             @Override
             public void onUploadComplete(FileMetadata result) {
+                //convert file size from kb to mb with two decimal places
+                float sizeMb = result.getSize()/MEGABYTE;
+                String fileSize =String.format(Locale.US, "%.2f", sizeMb) + " Mb";
                 fileUpload.setFileUpload(result);
+                fileUpload.setFileSize(fileSize);
                 photoUploadLiveData.setValue(fileUpload);
             }
 
