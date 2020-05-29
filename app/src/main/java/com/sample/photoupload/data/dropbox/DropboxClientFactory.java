@@ -1,4 +1,4 @@
-package com.sample.photoupload.data;
+package com.sample.photoupload.data.dropbox;
 
 import com.dropbox.core.oauth.DbxCredential;
 import com.dropbox.core.v2.DbxClientV2;

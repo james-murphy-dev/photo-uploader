@@ -2,44 +2,31 @@ package com.sample.photoupload.viewmodels;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.android.Auth;
-import com.dropbox.core.oauth.DbxCredential;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.users.FullAccount;
-import com.sample.photoupload.MainActivity;
 import com.sample.photoupload.R;
-import com.sample.photoupload.data.DropboxClientFactory;
+import com.sample.photoupload.data.dropbox.DropboxClientFactory;
 import com.sample.photoupload.data.UploadFileTask;
-import com.sample.photoupload.data.FileUpload;
+import com.sample.photoupload.data.FileUploadResult;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import static com.sample.photoupload.MainActivity.EXTRA_PATH;
-
 public class PhotoUploadViewModel extends AndroidViewModel {
 
     private Context context;
-
+    private boolean showLoginMessage = false;
 
     public PhotoUploadViewModel(@NonNull Application application){
         super(application);
         context = application;
-        String path = getIntent(context, "").getStringExtra(EXTRA_PATH);
-
-    }
-
-    public Intent getIntent(Context context, String path) {
-        Intent filesIntent = new Intent(context, MainActivity.class);
-        filesIntent.putExtra(MainActivity.EXTRA_PATH, path);
-        return filesIntent;
     }
 
     public void login(){
@@ -53,8 +40,6 @@ public class PhotoUploadViewModel extends AndroidViewModel {
     }
 
     public void getAccessToken() {
-        DbxCredential credential = Auth.getDbxCredential();
-
         SharedPreferences prefs = context.getSharedPreferences("com.sample.photoupload", Context.MODE_PRIVATE);
         String accessToken = prefs.getString("access-token",null);
 
@@ -63,6 +48,7 @@ public class PhotoUploadViewModel extends AndroidViewModel {
             if (accessToken!=null){
                 prefs.edit().putString("access-token", accessToken).apply();
                 DropboxClientFactory.init(accessToken);
+                showLoginMessage = true;
             }
         }
         else {
@@ -70,9 +56,9 @@ public class PhotoUploadViewModel extends AndroidViewModel {
         }
     }
 
-    public LiveData<FileUpload> uploadPhoto(Uri uri) {
-        final MutableLiveData<FileUpload> photoUploadLiveData = new MutableLiveData();
-        final FileUpload fileUpload = new FileUpload();
+    public LiveData<FileUploadResult> uploadPhoto(Uri uri) {
+        final MutableLiveData<FileUploadResult> photoUploadLiveData = new MutableLiveData<FileUploadResult>();
+        final FileUploadResult fileUpload = new FileUploadResult();
         new UploadFileTask(context, DropboxClientFactory.getClient(), new UploadFileTask.Callback() {
             @Override
             public void onUploadComplete(FileMetadata result) {
@@ -108,5 +94,12 @@ public class PhotoUploadViewModel extends AndroidViewModel {
 
         return userLoggedIn;
 
+    }
+
+    public void loginMessageSeen(){
+        showLoginMessage = false;
+    }
+    public boolean showLoginMessage() {
+        return showLoginMessage;
     }
 }

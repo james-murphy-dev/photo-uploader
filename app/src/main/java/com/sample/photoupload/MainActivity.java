@@ -15,23 +15,28 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Spinner;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dropbox.core.v2.files.FileMetadata;
-import com.sample.photoupload.data.FileUpload;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.snackbar.Snackbar;
+import com.sample.photoupload.data.FileUploadResult;
 import com.sample.photoupload.viewmodels.PhotoUploadViewModel;
 
 import java.text.DateFormat;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private PhotoUploadViewModel viewModel;
     private Button loginButton, uploadButton;
-    private Spinner loadingSpinner;
+    private ProgressBar progressBar;
+    private MaterialCardView fileMetatDataLabel;
+    private TextView  fileNameLabel, fileSizeLabel, fileDateLabel;
     private static final int PICKFILE_REQUEST_CODE = 1;
-    public final static String EXTRA_PATH = "MainActivity_Path";
-
+    private static final float  MEGABYTE = 1024L * 1024L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,9 +44,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         viewModel = new PhotoUploadViewModel(getApplication());
 
-        loadingSpinner = findViewById(R.id.spinner);
+        progressBar = findViewById(R.id.progress_bar);
         loginButton = findViewById(R.id.login_btn);
         uploadButton = findViewById(R.id.upload_btn);
+
+        fileMetatDataLabel = findViewById(R.id.file_meta_date_rl);
+
+        fileNameLabel = findViewById(R.id.file_name);
+        fileSizeLabel = findViewById(R.id.file_size);
+        fileDateLabel = findViewById(R.id.file_modified_date);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,17 +72,11 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean hasPermissionsForRead() {
         int result = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        if (result == PackageManager.PERMISSION_DENIED) {
-            return false;
-        }
-        return true;
+        return result == PackageManager.PERMISSION_GRANTED;
     }
 
     private boolean shouldDisplayRationaleForRead() {
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            return true;
-        }
-        return false;
+        return ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
     private void requestPermissionsForRead() {
@@ -119,29 +124,50 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == PICKFILE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                // This is the result of a call to launchFilePicker
-                loadingSpinner.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                uploadButton.setVisibility(View.GONE);
+                fileMetatDataLabel.setVisibility(View.GONE);
 
-                viewModel.uploadPhoto(data.getData()).observe(this, new Observer<FileUpload>() {
+                viewModel.uploadPhoto(data.getData()).observe(this, new Observer<FileUploadResult>() {
                     @Override
-                    public void onChanged(FileUpload upload) {
-                        loadingSpinner.setVisibility(View.GONE);
+                    public void onChanged(FileUploadResult upload) {
 
                         String message = "";
 
                         if (upload.uploadSuccessful()){
-                            FileMetadata fileMetadata = upload.getMetadata();
+                            final FileMetadata fileMetadata = upload.getMetadata();
 
-                             message+= fileMetadata.getName() + " size " + fileMetadata.getSize() + " modified " +
-                                    DateFormat.getDateTimeInstance().format(fileMetadata.getClientModified());
+                            //convert file size from kb to mb with two decimal places
+                            float sizeMb = fileMetadata.getSize()/MEGABYTE;
+                            String fileSize =String.format(Locale.US, "%.2f", sizeMb) + " Mb";
 
+                            String modified = "Modified on " +DateFormat.getDateTimeInstance().format(fileMetadata.getClientModified());
+
+                            fileNameLabel.setText(fileMetadata.getName());
+                            fileDateLabel.setText(modified);
+                            fileSizeLabel.setText(fileSize);
+
+                            fileMetatDataLabel.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                  //filemetatadata object does not provide link to download from remote server
+                                  //accessing file download could not be accomplished using Dropbox upload method
+
+                                }
+                            });
+
+                            progressBar.setVisibility(View.GONE);
+                            uploadButton.setVisibility(View.VISIBLE);
+                            fileMetatDataLabel.setVisibility(View.VISIBLE);
+
+                             message+= "Upload successful";
 
                         }
                         else{
                             message+= "Upload failed: "+upload.getError().getMessage();
                         }
 
-                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT)
+                        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG)
                                 .show();
 
                     }
@@ -182,22 +208,34 @@ public class MainActivity extends AppCompatActivity {
 
         if (viewModel.hasToken()){
 
-            loadingSpinner.setVisibility(View.VISIBLE);
             loginButton.setVisibility(View.GONE);
+
             viewModel.userLoggedIn().observe(this, new Observer<Boolean>() {
                 @Override
                 public void onChanged(Boolean loggedIn) {
-                    loadingSpinner.setVisibility(View.VISIBLE);
                     if (loggedIn){
-                        loginButton.setVisibility(View.GONE);
+
+                        if (viewModel.showLoginMessage()){
+                            //user has logged in during this session
+                            Snackbar.make(findViewById(android.R.id.content), "Login success", Snackbar.LENGTH_SHORT)
+                                    .show();
+
+                            viewModel.loginMessageSeen();
+                            progressBar.setVisibility(View.GONE);
+                        }
                         uploadButton.setVisibility(View.VISIBLE);
+                        loginButton.setVisibility(View.GONE);
                     }
                     else{
                         loginButton.setVisibility(View.VISIBLE);
+                        uploadButton.setVisibility(View.GONE);
                     }
 
                 }
             });
+        }
+        else{
+            loginButton.setVisibility(View.VISIBLE);
         }
 
 

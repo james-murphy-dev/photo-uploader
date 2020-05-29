@@ -2,13 +2,13 @@ package com.sample.photoupload.data;
 
 import com.dropbox.core.v2.files.FileMetadata;
 
-public class FileUpload {
+public class FileUploadResult {
 
     private FileMetadata fileUpload;
     private Exception error;
     private boolean uploadSuccess;
 
-    public FileUpload(){}
+    public FileUploadResult(){}
 
     public FileMetadata getMetadata() {
         return fileUpload;
@@ -30,5 +30,5 @@ public class FileUpload {
 
     public boolean uploadSuccessful(){
         return uploadSuccess;
-    };
+    }
 }

@@ -1,4 +1,4 @@
-package com.sample.photoupload.data;
+package com.sample.photoupload.data.dropbox;
 
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.http.OkHttp3Requestor;
